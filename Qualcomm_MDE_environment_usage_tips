@@ -1,0 +1,167 @@
+How to switch the KSE default worksapce to the user's workspace?
+1. remove the default KSE workspace
+    
+  In the file "C:\qtil\ADK_Toolkit_1.2.21.13_x64\activate.bat", remove the defalut path of KATS_WORKSPACE
+       REM set "KATS_WORKSPACE=%KSE_WORKSPACE_PATH%"   
+
+  Note: MDE will call activate.bat so the workspace will be set as KATS_WORKSPACE_PATH. 
+
+2. In environment variables, set KATS_WORKSPACE
+
+    KATS_WORKSPACE  C:\XXX\Qualcom\QCC-AEC-Speex-master\audio\kse\workspace
+
+3. edit ublock_usb.txt and unlock ADK
+   add 32 "0" in usb.txt
+   C:\qtil\ADK_Toolkit_1.2.21.13_x64\tools\bin>TransportUnlock.exe writeunlockkey unlock_usb.txt
+
+4. ACAT: when meet frquency error, then set XXX = 240 in XXX.py (profiler.run_clks(5)
+
+5. Debugging: 
+   5-1) set breakpoints
+   5-2) add symbol file for breakpoins audio/p0: download_XXX_cap.elf
+   5-3) KSE python command window: run -i script/kalsim/mle.py config/XXX.cfg.json
+
+6. Register window
+
+   Register window is above the variable window. It needs to be drag down if it is minimized. 
+   Performance counts -> RUNCLKS stores the current clk count
+   (after count - before count )/240000 = XXX ms
+
+5. Debug
+   -) set ml_cap project as active
+   -) deploy all projects    ( Must choose deploy all projects from menu to write all projects into the chip. Pls. donot click project and deploy individual project, because it will cause "bundle missing" in ATCT )
+   -) debug -> attach -> ml_cap.elf (download)
+
+6. 
+    add ProfilerEnable =1  into <fw_cfg/subsys3_config1.htf>
+    ACAT:  run_clks(xxx)   
+           run_pc(xxx)
+     
+
+7.  stream.create_live_graph_img()
+    DOT_BINARY = "C:\\Program Files\\Graphviz\\bin\\dot.exe"
+    C:\qtil\ADK_Toolkit_1.2.21.13_x64\tools\pyenv37\Lib\site-packages\graphviz\backend\dot_command.py
+
+8. accum_to_int() and accum_to_long_long()
+   
+   int X1 = 100; //3;
+   int X2 = 100; //-5;
+
+   debug_accum[0]  =   __builtin_reinterpret_int_to_fract(X1)*__builtin_reinterpret_int_to_fract(X1); //100000
+   debug_accum[1]  =  __builtin_reinterpret_int_to_fract(X2)*__builtin_reinterpret_int_to_fract(X2);  //100000
+   debug_accum[2]  =  debug_mem[0] + debug_mem[1];                                                    //0
+
+   debug_accum[0]  =   __builtin_reinterpret_int_to_fract(X1)*__builtin_reinterpret_int_to_fract(X1);  //10000
+   debug_accum[0]  +=  __builtin_reinterpret_int_to_fract(X2)*__builtin_reinterpret_int_to_fract(X2);  //20000
+
+   debug_accum[1] = debug_accum[0] >> 1;
+   debug_fract[0] = (sat fract) debug_accum[1];                                   // 0
+   debug_mem[0] = (int) __builtin_reinterpret_accum_to_long_long(debug_accum[1]); // 200000   rMAC(B)0 and  rMAC(B)1
+   debug_mem[0] = (int) __builtin_reinterpret_accum_to_int(debug_accum[1]);       // 0
+   debug_mem[1] = __builtin_reinterpret_fract_to_int(debug_fract[0]);             // 0
+
+9. KSP sniffing
+
+a) MDE_WIN_2.8.0.37_x64: IDE 
+b) ADK_Toolkit_2.0.17.5_x64: development toolkit
+c) adk_qcc: workspace 
+
+C:\qtil\adk_qcc\tools\python_workspace\workspace_env37
+C:\qtil\adk_qcc\tools\python_workspace\workspace_env37\bin\ksp
+
+commands:
+1) set PYTHONPATH=C:\XXX\tools\python_workspace\workspace_env37
+2) cd C:\XXX\example_apps\ml_loopback\workspace\QCC5171-AA_DEV-BRD-R3-AA\depend_debug_qcc517x_qcc307x
+3) C:\XXX\tools\python_workspace\workspace_env37\bin\ksp usb2tc -f ml_loopback.elf
+
+FYI
+environment variables:
+PYTHONPATH=C:\qtil\adk_qcc\tools\python_workspace\workspace_env37
+WORKSPACE_PATH= "C:\qtil\adk_qcc\audio"
+_ADK_WORKSPACE_PYTHON=C:\qtil\adk_qcc\tools\python_workspace\requirements.txt
+UBUILD_PATH=C:\qtil\ADK_Toolkit_2.0.17.5_x64\tools\pyenv311\Scripts;C:\qtil\ADK_Toolkit_2.0.17.5_x64\tools\bin
+VIRTUAL_ENV=C:\qtil\ADK_Toolkit_2.0.17.5_x64\tools\pyenv311
+
+10. Endpoint setting: qualcomm_aec_readme.docs
+    - to setup two inputs to capability (two sources) and two outputs (audio left output and audio right output) from capability (sink)
+    - to use KSP to sniffle the transform link 
+
+ML_Loopback project
+1) main.c 
+    static const ml_config_t ml_config = {
+        .use_case_id = 1,
+        .aec_capability_id      = 0xC800,
+        .sniffing_capability_id = 0xC000,
+        /* Model access methods */
+        .access_method = MODEL_DIRECT_ACCESS,
+        .operator_bundle = "download_merry_ml_trilstmdfn_cap.dkcs", // add capability here
+        .sniffing_bundle = "download_merry_sniffing_cap.dkcs",      // add capability here
+        .batch_reset_count = 0
+};
+
+2) my_loopback.h
+    typedef struct
+    {
+        uint16 use_case_id;
+        uint16 aec_capability_id;
+        uint16 sniffing_capability_id;
+        uint16 access_method;
+        uint16 batch_reset_count;
+        char *operator_bundle;
+        char *sniffing_bundle;
+    } ml_config_t;
+
+3) ml_loopback.c
+    // load capability : audio_endpoint is hardware terminal; the rest is buffer terminal
+    FILE_INDEX index = FileFind(FILE_ROOT, ml_config->operator_bundle, strlen(ml_config->operator_bundle));
+    if(index == FILE_NONE)  { Panic(); }
+    BundleID bundle_id = OperatorBundleLoad(index,capability_load_to_p0_use_on_p0_only);
+    if(bundle_id == BUNDLE_ID_INVALID) { Panic(); }
+    Operator ml_ex_cap = PanicZero(VmalOperatorCreate( ml_config->aec_capability_id));
+    /* Connect the operator terminals to the audio endpoints */
+    PanicNull(StreamConnect(audio_endpoint.source_ep[0],  StreamSinkFromOperatorTerminal(ml_ex_cap, 0)));
+    PanicNull(StreamConnect(StreamSourceFromOperatorTerminal(ml_ex_cap, 0), audio_endpoint.sink_ep[0]));
+    PanicNull(StreamConnect(audio_endpoint.source_ep[1],  StreamSinkFromOperatorTerminal(ml_ex_cap, 1)));
+    PanicNull(StreamConnect(StreamSourceFromOperatorTerminal(ml_ex_cap, 1), audio_endpoint.sink_ep[1]));
+
+    // load capability
+    index = FileFind(FILE_ROOT, ml_config->sniffing_bundle, strlen(ml_config->sniffing_bundle));
+    if(index == FILE_NONE)  {  Panic(); }
+    bundle_id = OperatorBundleLoad(index,capability_load_to_p0_use_on_p0_only);
+    if(bundle_id == BUNDLE_ID_INVALID)  {  Panic();  }
+    Operator sniffing_ex_cap = PanicZero(VmalOperatorCreate( ml_config->sniffing_capability_id));
+     /* Connect the operator buffer terminals to the operator buffer terminals */
+    PanicNull(StreamConnect(StreamSourceFromOperatorTerminal(ml_ex_cap, 2), StreamSinkFromOperatorTerminal(sniffing_ex_cap, 0)));
+    PanicNull(StreamConnect(StreamSourceFromOperatorTerminal(ml_ex_cap, 3), StreamSinkFromOperatorTerminal(sniffing_ex_cap, 1)));
+
+    /* Start the operator */
+    Operator op_list[] = {
+        ml_ex_cap,
+        sniffing_ex_cap,
+    };
+    PanicFalse(OperatorStartMultiple(sizeof(op_list)/sizeof(op_list[0]),op_list,NULL));
+
+  4) ml_loopback_setup_audio.c
+     
+    audio_endpoint_t audio_endpoint;  // hardware mic and speaker terminals
+    VmalOperatorFrameworkEnableMainProcessor();
+    /* Get the output endpoints */
+    audio_endpoint.sink_ep[0]  = PanicNull(StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_A));
+    audio_endpoint.sink_ep[1]  = PanicNull(StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_B));
+    /* Get the input endpoints */
+    audio_endpoint.source_ep[0] = PanicNull(StreamAudioSource(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_A));
+    audio_endpoint.source_ep[1] = PanicNull(StreamAudioSource(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_B));
+
+    MicbiasConfigure(MIC_BIAS_0, MIC_BIAS_ENABLE, (uint16)MIC_BIAS_FORCE_ON);
+    /* Configure the sample rate and gain for the input endpoint */
+    PanicFalse(SourceConfigure(audio_endpoint.source_ep[0],  STREAM_CODEC_INPUT_RATE, DAC_SAMPLE_RATE));
+    PanicFalse(SourceConfigure(audio_endpoint.source_ep[0],  STREAM_CODEC_INPUT_GAIN, CODEC_GAIN));
+    PanicFalse(SourceConfigure(audio_endpoint.source_ep[1],  STREAM_CODEC_INPUT_RATE, DAC_SAMPLE_RATE));
+    PanicFalse(SourceConfigure(audio_endpoint.source_ep[1],  STREAM_CODEC_INPUT_GAIN, CODEC_GAIN));
+
+    /* Configure the sample rate and gain for the output endpoint */
+    PanicFalse(SinkConfigure(audio_endpoint.sink_ep[0],  STREAM_CODEC_OUTPUT_RATE, DAC_SAMPLE_RATE));
+    PanicFalse(SinkConfigure(audio_endpoint.sink_ep[0],  STREAM_CODEC_OUTPUT_GAIN, CODEC_GAIN));
+    PanicFalse(SinkConfigure(audio_endpoint.sink_ep[1],  STREAM_CODEC_OUTPUT_RATE, DAC_SAMPLE_RATE));
+    PanicFalse(SinkConfigure(audio_endpoint.sink_ep[1],  STREAM_CODEC_OUTPUT_GAIN, CODEC_GAIN));
+

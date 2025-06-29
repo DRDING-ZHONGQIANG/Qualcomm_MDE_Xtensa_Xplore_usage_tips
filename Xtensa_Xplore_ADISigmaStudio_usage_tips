@@ -1,0 +1,23 @@
+Xtensa Xplorer: HIFI DSP cores
+1. JTAG Xtensa: 
+   C:\Program Files (x86)\Tensilica\Xtensa OCD Daemon 14.10\topology.xml
+   <controller id='Controller0' module='jlink' usbser='504503136' speed='1000000' />
+
+2. ADAUXXX EVB board
+   use external power supply except JTAG link
+
+3. MakefileHW - > ELF
+cd C:\XXX\ADAU1797_SDK\adau1797_sw\examples\SigmaStudio\SS_templates\..\..\..\utilities\app-pack-gen;%path%
+if not exist "ELF" mkdir "ELF"
+cd C:\XXX
+del *.elf
+del *.map
+del -r self_boot.hex
+C:\usr\xtensa\XtDevTools\install\tools\RI-2022.10-win32\XtensaTools\bin\xt-make --xtensa-core=ADAU1797_2022_10 -f MakefileHW all -j22
+copy XXX.elf C:\XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\ELF
+
+4. Strawberry Perl -> BIN
+C:XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\gen_app_pack.bat
+C:\Strawberry\perl\bin\perl gen_app_pack.pl %1 0
+echo Copying Yaml file to \scores folder
+copy "%~dpn1.yml" .\scores\ 
