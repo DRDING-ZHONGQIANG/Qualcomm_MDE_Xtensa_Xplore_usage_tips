@@ -25,7 +25,7 @@ copy "%~dpn1.yml" .\scores\
 5.  compiling commands
 cd C:\XXX\tools\ADAU1797_SDK\adau1797_sw\examples\SigmaStudio\SS_templates\..\..\..\utilities\app-pack-gen;%path%
 if not exist "ELF" mkdir "ELF"
-cd C:\XXX\workspace\HUBY_Merry_2025
+cd C:\XXX\workspace\XXX
 del *.elf
 del *.map
 del -r self_boot.hex
