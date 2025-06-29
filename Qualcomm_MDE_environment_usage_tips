@@ -161,6 +161,8 @@ ML_Loopback project
 
     /* Configure the sample rate and gain for the output endpoint */
     PanicFalse(SinkConfigure(audio_endpoint.sink_ep[0],  STREAM_CODEC_OUTPUT_RATE, DAC_SAMPLE_RATE));
+
+
     PanicFalse(SinkConfigure(audio_endpoint.sink_ep[0],  STREAM_CODEC_OUTPUT_GAIN, CODEC_GAIN));
     PanicFalse(SinkConfigure(audio_endpoint.sink_ep[1],  STREAM_CODEC_OUTPUT_RATE, DAC_SAMPLE_RATE));
     PanicFalse(SinkConfigure(audio_endpoint.sink_ep[1],  STREAM_CODEC_OUTPUT_GAIN, CODEC_GAIN));
