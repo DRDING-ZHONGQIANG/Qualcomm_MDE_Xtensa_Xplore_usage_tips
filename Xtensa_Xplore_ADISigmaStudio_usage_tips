@@ -33,6 +33,18 @@ C:\usr\xtensa\XtDevTools\install\tools\RI-2022.10-win32\XtensaTools\bin\xt-make 
 copy XXX.elf C:\XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\ELF
 C:\XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\gen_app_pack.bat .\XXX.elf
 
-6. 
-
-
+6. moving commands
+copy C:\XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\output\*bin  C:\XXX
+@echo off
+set YEAR=%DATE:~10,4%
+set DAY=%DATE:~4,2%
+set MONTH=%DATE:~7,2%
+set HOUR=%TIME:~0,2%
+set MINUTE=%TIME:~3,2%
+set SECOND=%TIME:~6,2%
+if %HOUR% LSS 10 set HOUR=0%HOUR:~1,1%
+if %MINUTE% LSS 10 set MINUTE=0%MINUTE:~1,1%
+if %SECOND% LSS 10 set SECOND=0%SECOND:~1,1%
+set FILENAME=XXX_%YEAR%%MONTH%%DAY%_%HOUR%%MINUTE%.bin
+copy C:\XXX\flash_image.bin C:\XXX\%FILENAME%
+copy C:\XXX\%FILENAME%  C:\XXX\prototyping_bins
