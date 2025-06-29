@@ -21,3 +21,18 @@ C:XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\gen_app_pack.bat
 C:\Strawberry\perl\bin\perl gen_app_pack.pl %1 0
 echo Copying Yaml file to \scores folder
 copy "%~dpn1.yml" .\scores\ 
+
+5.  compiling commands
+cd C:\XXX\tools\ADAU1797_SDK\adau1797_sw\examples\SigmaStudio\SS_templates\..\..\..\utilities\app-pack-gen;%path%
+if not exist "ELF" mkdir "ELF"
+cd C:\XXX\workspace\HUBY_Merry_2025
+del *.elf
+del *.map
+del -r self_boot.hex
+C:\usr\xtensa\XtDevTools\install\tools\RI-2022.10-win32\XtensaTools\bin\xt-make --xtensa-core=ADAU1797_2022_10 -f MakefileHW all -j22
+copy XXX.elf C:\XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\ELF
+C:\XXX\tools\ADAU1797_SDK\adau1797_sw\utilities\app-pack-gen\gen_app_pack.bat .\XXX.elf
+
+6. 
+
+
